@@ -331,12 +331,14 @@ class IP6ListField(StrField):
 class _IPv6GuessPayload:        
     name = "Dummy class that implements guess_payload_class() for IPv6"
     def default_payload_class(self,p):
-        if self.nh == 58 and len(p) > 2:
+        if self.nh == 58: # ICMPv6
             t = ord(p[0])
-            if t == 139 or t == 140: # Node Info Query 
+            if len(p) > 2 and t == 139 or t == 140: # Node Info Query 
                 return _niquery_guesser(p)
-            return get_cls(icmp6typescls.get(t,"Raw"), "Raw")
-        elif self.nh == 135 and len(p) > 3:
+            if len(p) >= icmp6typesminhdrlen.get(t, sys.maxint): # Other ICMPv6 messages
+                return get_cls(icmp6typescls.get(t,"Raw"), "Raw")
+            return Raw
+        elif self.nh == 135 and len(p) > 3: # Mobile IPv6
             return _mip6_mhtype2cls.get(ord(p[2]), MIP6MH_Generic)
         else:
             return get_cls(ipv6nhcls.get(self.nh,"Raw"), "Raw")
@@ -958,15 +960,22 @@ def fragment6(pkt, fragSize):
     """
 
     pkt = pkt.copy()
-    s = str(pkt) # for instantiation to get upper layer checksum right
-
-    if len(s) <= fragSize:
-        return [pkt]
 
     if not IPv6ExtHdrFragment in pkt:
         # TODO : automatically add a fragment before upper Layer
         #        at the moment, we do nothing and return initial packet
         #        as single element of a list
+        return [pkt]
+
+    # If the payload is bigger than 65535, a Jumbo payload must be used, as
+    # an IPv6 packet can't be bigger than 65535 bytes. 
+    if len(str(pkt[IPv6ExtHdrFragment])) > 65535:
+      warning("An IPv6 packet can'be bigger than 65535, please use a Jumbo payload.")
+      return []
+    
+    s = str(pkt) # for instantiation to get upper layer checksum right
+
+    if len(s) <= fragSize:
         return [pkt]
 
     # Fragmentable part : fake IPv6 for Fragmentable part length computation
@@ -1109,6 +1118,33 @@ icmp6typescls = {    1: "ICMPv6DestUnreach",
                    151: "ICMPv6MRD_Advertisement",
                    152: "ICMPv6MRD_Solicitation",
                    153: "ICMPv6MRD_Termination",
+                   }
+
+icmp6typesminhdrlen = {    1: 8,
+                           2: 8,
+                           3: 8,
+                           4: 8,
+                         128: 8,
+                         129: 8,
+                         130: 24,
+                         131: 24,
+                         132: 24,
+                         133: 8,
+                         134: 16,
+                         135: 24,
+                         136: 24,
+                         137: 40,
+                         #139:
+                         #140
+                         141: 8,
+                         142: 8,
+                         144: 8,
+                         145: 8,
+                         146: 8,
+                         147: 8,
+                         151: 8,
+                         152: 4,
+                         153: 4
                    }
 
 icmp6types = { 1 : "Destination unreachable",  
