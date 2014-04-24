@@ -2706,6 +2706,7 @@ class MIP6MH_HoTI(_MobilityHeader):
                     ByteEnumField("mhtype", 1, mhtypes),                    
                     ByteField("res", None),
                     XShortField("cksum", None),                    
+                    StrFixedLenField("reserved", "\x00"*2, 2),
                     StrFixedLenField("cookie", "\x00"*8, 8),
                     _PhantomAutoPadField("autopad", 1), # autopad activated by default
                     _MobilityOptionsField("options", [], MIP6OptUnknown, 16,
@@ -3002,4 +3003,4 @@ bind_layers(IPv6,      TCP,      nh = socket.IPPROTO_TCP )
 bind_layers(IPv6,      UDP,      nh = socket.IPPROTO_UDP )
 bind_layers(IP,        IPv6,     proto = socket.IPPROTO_IPV6 )
 bind_layers(IPv6,      IPv6,     nh = socket.IPPROTO_IPV6 )
-
+bind_layers(IPv6,      IP,       nh = socket.IPPROTO_IPIP )
