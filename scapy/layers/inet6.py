@@ -338,7 +338,7 @@ class _IPv6GuessPayload:
             if len(p) >= icmp6typesminhdrlen.get(t, sys.maxint): # Other ICMPv6 messages
                 return get_cls(icmp6typescls.get(t,"Raw"), "Raw")
             return Raw
-        elif self.nh == 135 and len(p) > 3: # Mobile IPv6
+        elif self.nh == 135 and len(p) > 3: # Mobile IPv6
             return _mip6_mhtype2cls.get(ord(p[2]), MIP6MH_Generic)
         else:
             return get_cls(ipv6nhcls.get(self.nh,"Raw"), "Raw")
@@ -2706,6 +2706,7 @@ class MIP6MH_HoTI(_MobilityHeader):
                     ByteEnumField("mhtype", 1, mhtypes),                    
                     ByteField("res", None),
                     XShortField("cksum", None),                    
+                    StrFixedLenField("reserved", "\x00"*2, 2),
                     StrFixedLenField("cookie", "\x00"*8, 8),
                     _PhantomAutoPadField("autopad", 1), # autopad activated by default
                     _MobilityOptionsField("options", [], MIP6OptUnknown, 16,
@@ -3002,4 +3003,4 @@ bind_layers(IPv6,      TCP,      nh = socket.IPPROTO_TCP )
 bind_layers(IPv6,      UDP,      nh = socket.IPPROTO_UDP )
 bind_layers(IP,        IPv6,     proto = socket.IPPROTO_IPV6 )
 bind_layers(IPv6,      IPv6,     nh = socket.IPPROTO_IPV6 )
-
+bind_layers(IPv6,      IP,       nh = socket.IPPROTO_IPIP )
