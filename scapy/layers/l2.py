@@ -50,6 +50,7 @@ def getmacbyip(ip, chainCC=0):
     """Return MAC address corresponding to a given IP address"""
     if isinstance(ip,Net):
         ip = iter(ip).next()
+    ip = inet_ntoa(inet_aton(ip))
     tmp = map(ord, inet_aton(ip))
     if (tmp[0] & 0xf0) == 0xe0: # mcast @
         return "01:00:5e:%.2x:%.2x:%.2x" % (tmp[1]&0x7f,tmp[2],tmp[3])
@@ -472,7 +473,7 @@ Set cache=True if you want arping to modify internal ARP-Cache"""
 
     if cache and ans is not None:
         for pair in ans:
-            arp_cache[pair[1].psrc] = (pair[1].hwsrc, time.time())
+            conf.netcache.arp_cache[pair[1].psrc] = (pair[1].hwsrc, time.time())
     if verbose:
         ans.show()
     return ans,unans
