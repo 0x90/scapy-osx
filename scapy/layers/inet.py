@@ -74,6 +74,7 @@ class _IPOption_HDR(Packet):
                     BitEnumField("option",0,5, _ip_options_names) ]
     
 class IPOption(Packet):
+    name = "IP Option"
     fields_desc = [ _IPOption_HDR,
                     FieldLenField("length", None, fmt="B",  # Only option 0 and 1 have no length and value
                                   length_of="value", adjust=lambda pkt,l:l+2),
@@ -95,15 +96,18 @@ class IPOption(Packet):
         return cls
 
 class IPOption_EOL(IPOption):
+    name = "IP Option End of Options List"
     option = 0
     fields_desc = [ _IPOption_HDR ]
     
 
 class IPOption_NOP(IPOption):
+    name = "IP Option No Operation"
     option=1
     fields_desc = [ _IPOption_HDR ]
 
 class IPOption_Security(IPOption):
+    name = "IP Option Security"
     copy_flag = 1
     option = 2
     fields_desc = [ _IPOption_HDR,
@@ -155,6 +159,7 @@ class IPOption_MTU_Reply(IPOption_MTU_Probe):
     option = 12
 
 class IPOption_Traceroute(IPOption):
+    name = "IP Option Traceroute"
     copy_flag = 1
     option = 18
     fields_desc = [ _IPOption_HDR,
@@ -1135,7 +1140,7 @@ class TracerouteResult(SndRcvList):
                 trace_id = (s.src,s.dst,s.proto,0)
             trace = rt.get(trace_id,{})
             ttl = conf.ipv6_enabled and scapy.layers.inet6.IPv6 in s and s.hlim or s.ttl
-            if not (ICMP in r and r[ICMP].type == 11) and not (conf.ipv6_enabled and scapy.layers.inet6.IPv6 in r and ICMPv6TimeExceeded in r):
+            if not (ICMP in r and r[ICMP].type == 11) and not (conf.ipv6_enabled and scapy.layers.inet6.IPv6 in r and scapy.layers.inet6.ICMPv6TimeExceeded in r):
                 if trace_id in ports_done:
                     continue
                 ports_done[trace_id] = None
