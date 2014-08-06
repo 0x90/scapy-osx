@@ -1312,7 +1312,7 @@ class ICMPv6MLQuery(_ICMPv6ML): # RFC 2710
     type   = 130
     mrd    = 10000
     mladdr = "::" # 10s for mrd
-    overload_fields = {IPv6: { "dst": "ff02::1", "hlim": 1 }} 
+    overload_fields = {IPv6: { "dst": "ff02::1", "hlim": 1, "nh": 58 }} 
     def hashret(self):
         if self.mladdr != "::":
             return struct.pack("HH",self.mladdr)+self.payload.hashret()
@@ -1325,7 +1325,7 @@ class ICMPv6MLQuery(_ICMPv6ML): # RFC 2710
 class ICMPv6MLReport(_ICMPv6ML): # RFC 2710
     name = "MLD - Multicast Listener Report"
     type = 131
-    overload_fields = {IPv6: {"hlim": 1}}
+    overload_fields = {IPv6: {"hlim": 1, "nh": 58}}
     # implementer le hashret et le answers
     
 # When a node ceases to listen to a multicast address on an interface,
@@ -1337,7 +1337,7 @@ class ICMPv6MLReport(_ICMPv6ML): # RFC 2710
 class ICMPv6MLDone(_ICMPv6ML): # RFC 2710
     name = "MLD - Multicast Listener Done"
     type = 132
-    overload_fields = {IPv6: { "dst": "ff02::2", "hlim": 1}}
+    overload_fields = {IPv6: { "dst": "ff02::2", "hlim": 1, "nh": 58}}
 
 
 ########## ICMPv6 MRD - Multicast Router Discovery (RFC 4286) ###############
@@ -2706,6 +2706,7 @@ class MIP6MH_HoTI(_MobilityHeader):
                     ByteEnumField("mhtype", 1, mhtypes),                    
                     ByteField("res", None),
                     XShortField("cksum", None),                    
+                    StrFixedLenField("reserved", "\x00"*2, 2),
                     StrFixedLenField("cookie", "\x00"*8, 8),
                     _PhantomAutoPadField("autopad", 1), # autopad activated by default
                     _MobilityOptionsField("options", [], MIP6OptUnknown, 16,
@@ -3002,4 +3003,4 @@ bind_layers(IPv6,      TCP,      nh = socket.IPPROTO_TCP )
 bind_layers(IPv6,      UDP,      nh = socket.IPPROTO_UDP )
 bind_layers(IP,        IPv6,     proto = socket.IPPROTO_IPV6 )
 bind_layers(IPv6,      IPv6,     nh = socket.IPPROTO_IPV6 )
-
+bind_layers(IPv6,      IP,       nh = socket.IPPROTO_IPIP )
