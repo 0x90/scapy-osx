@@ -52,7 +52,6 @@ class DNSStrField(StrField):
 
 
 class DNSRRCountField(ShortField):
-    holds_packets=1
     def __init__(self, name, default, rr):
         ShortField.__init__(self, name, default)
         self.rr = rr
@@ -158,7 +157,6 @@ class DNSRRField(StrField):
             
             
 class DNSQRField(DNSRRField):
-    holds_packets=1
     def decodeRR(self, name, s, p):
         ret = s[p:p+4]
         p += 4
@@ -196,7 +194,7 @@ class RDataField(StrLenField):
         if pkt.type == 1: # A
             if s:
                 s = inet_aton(s)
-        elif pkt.type in [2,3,4,5]: # NS, MD, MF, CNAME
+        elif pkt.type in [2, 3, 4, 5, 12]: # NS, MD, MF, CNAME, PTR
             s = "".join(map(lambda x: chr(len(x))+x, s.split(".")))
             if ord(s[-1]):
                 s += "\x00"
