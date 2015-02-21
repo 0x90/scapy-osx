@@ -256,7 +256,6 @@ class DHCP6OptUnknown(_DHCP6OptGuessPayload): # A generic DHCPv6 Option
                                 length_from = lambda pkt: pkt.optlen)]
 
 class _DUIDField(PacketField):
-    holds_packets=1
     def __init__(self, name, default, length_from=None):
         StrField.__init__(self, name, default)
         self.length_from = length_from
@@ -758,25 +757,19 @@ class DomainNameField(StrLenField):
         return len(self.i2m(pkt, x))
 
     def m2i(self, pkt, x):
-        save = x
         cur = []
-        while x and x[0] != '\x00':
+        while x:
             l = ord(x[0])
             cur.append(x[1:1+l])
             x = x[l+1:]
-        if x[0] != '\x00':
-            print "Found weird domain: '%s'. Keeping %s" % (save, x)
-        return ".".join(cur)
+        ret_str = ".".join(cur)
+        return ret_str
 
     def i2m(self, pkt, x):
-        def conditionalTrailingDot(z):
-            if (z and z[-1] == '\x00'):
-                return z
-            return z+'\x00'
         if not x:
             return ""
         tmp = "".join(map(lambda z: chr(len(z))+z, x.split('.')))
-        return conditionalTrailingDot(tmp)
+        return tmp
 
 class DHCP6OptNISDomain(_DHCP6OptGuessPayload):             #RFC3898
     name = "DHCP6 Option - NIS Domain Name"
@@ -1055,9 +1048,14 @@ class DHCP6_Rebind(DHCP6):
 class DHCP6_Reply(DHCP6):
     name = "DHCPv6 Reply Message"
     msgtype = 7
+
+    overload_fields = { UDP: {"sport": 547, "dport": 546} }
     
     def answers(self, other):
-        return (isinstance(other, DHCP6_InfoRequest) and
+
+        types = (DHCP6_InfoRequest, DHCP6_Confirm, DHCP6_Rebind, DHCP6_Decline, DHCP6_Request, DHCP6_Release, DHCP6_Renew)
+
+        return (isinstance(other, types) and
                 self.trid == other.trid)
 
 #####################################################################
@@ -1119,9 +1117,6 @@ class DHCP6_InfoRequest(DHCP6):
     name = "DHCPv6 Information Request Message"    
     msgtype = 11 
     
-    def hashret(self): 
-        return struct.pack("!I", self.trid)[1:3]
-
 #####################################################################
 # sent between Relay Agents and Servers 
 #
@@ -1169,7 +1164,7 @@ class DHCP6_RelayReply(DHCP6_RelayForward):
         return inet_pton(socket.AF_INET6, self.peeraddr)
     def answers(self, other):
         return (isinstance(other, DHCP6_RelayForward) and
-                self.count == other.count and
+                self.hopcount == other.hopcount and
                 self.linkaddr == other.linkaddr and
                 self.peeraddr == other.peeraddr )
 

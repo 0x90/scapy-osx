@@ -50,6 +50,7 @@ def getmacbyip(ip, chainCC=0):
     """Return MAC address corresponding to a given IP address"""
     if isinstance(ip,Net):
         ip = iter(ip).next()
+    ip = inet_ntoa(inet_aton(ip))
     tmp = map(ord, inet_aton(ip))
     if (tmp[0] & 0xf0) == 0xe0: # mcast @
         return "01:00:5e:%.2x:%.2x:%.2x" % (tmp[1]&0x7f,tmp[2],tmp[3])
@@ -136,7 +137,7 @@ class Ether(Packet):
     name = "Ethernet"
     fields_desc = [ DestMACField("dst"),
                     SourceMACField("src"),
-                    XShortEnumField("type", 0x0000, ETHER_TYPES) ]
+                    XShortEnumField("type", 0x9000, ETHER_TYPES) ]
     def hashret(self):
         return struct.pack("H",self.type)+self.payload.hashret()
     def answers(self, other):
@@ -368,7 +369,7 @@ class GRE(Packet):
                     BitField("key_present",0,1),
                     BitField("seqnum_present",0,1),
                     BitField("strict_route_source",0,1),
-                    BitField("recursion control",0,3),
+                    BitField("recursion_control",0,3),
                     BitField("flags",0,5),
                     BitField("version",0,3),
                     XShortEnumField("proto", 0x0000, ETHER_TYPES),
@@ -472,7 +473,7 @@ Set cache=True if you want arping to modify internal ARP-Cache"""
 
     if cache and ans is not None:
         for pair in ans:
-            arp_cache[pair[1].psrc] = (pair[1].hwsrc, time.time())
+            conf.netcache.arp_cache[pair[1].psrc] = (pair[1].hwsrc, time.time())
     if verbose:
         ans.show()
     return ans,unans
