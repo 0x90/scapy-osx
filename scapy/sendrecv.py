@@ -219,9 +219,9 @@ def __gen_send(s, x, inter=0, loop=0, count=None, verbose=None, realtime=None, *
         loop = -count
     elif not loop:
         loop=-1
-    dt0 = None
     try:
         while loop:
+            dt0 = None
             for p in x:
                 if realtime:
                     ct = time.time()
@@ -273,9 +273,9 @@ def sendpfast(x, pps=None, mbps=None, realtime=None, loop=0, file_cache=False, i
     if pps is not None:
         argv.append("--pps=%i" % pps)
     elif mbps is not None:
-        argv.append("--mbps=%i" % mbps)
+        argv.append("--mbps=%f" % mbps)
     elif realtime is not None:
-        argv.append("--multiplier=%i" % realtime)
+        argv.append("--multiplier=%f" % realtime)
     else:
         argv.append("--topspeed")
 

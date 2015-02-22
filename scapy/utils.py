@@ -237,6 +237,60 @@ else:
         s = ~s
         return (((s>>8)&0xff)|s<<8) & 0xffff
 
+
+def _fletcher16(charbuf):
+    # This is based on the GPLed C implementation in Zebra <http://www.zebra.org/>
+    c0 = c1 = 0
+    for char in charbuf:
+        c0 += ord(char)
+        c1 += c0
+
+    c0 %= 255
+    c1 %= 255
+    return (c0,c1)
+
+@conf.commands.register
+def fletcher16_checksum(binbuf):
+    """ Calculates Fletcher-16 checksum of the given buffer.
+        
+        Note:
+        If the buffer contains the two checkbytes derived from the Fletcher-16 checksum
+        the result of this function has to be 0. Otherwise the buffer has been corrupted.
+    """
+    (c0,c1)= _fletcher16(binbuf)
+    return (c1 << 8) | c0
+
+
+@conf.commands.register
+def fletcher16_checkbytes(binbuf, offset):
+    """ Calculates the Fletcher-16 checkbytes returned as 2 byte binary-string.
+    
+        Including the bytes into the buffer (at the position marked by offset) the
+        global Fletcher-16 checksum of the buffer will be 0. Thus it is easy to verify
+        the integrity of the buffer on the receiver side.
+        
+        For details on the algorithm, see RFC 2328 chapter 12.1.7 and RFC 905 Annex B.
+    """
+    
+    # This is based on the GPLed C implementation in Zebra <http://www.zebra.org/>
+    if len(binbuf) < offset:
+        raise Exception("Packet too short for checkbytes %d" % len(binbuf))
+
+    binbuf = binbuf[:offset] + "\x00\x00" + binbuf[offset + 2:]
+    (c0,c1)= _fletcher16(binbuf)
+
+    x = ((len(binbuf) - offset - 1) * c0 - c1) % 255
+
+    if (x <= 0):
+        x += 255
+
+    y = 510 - c0 - x
+
+    if (y > 255):
+        y -= 255
+    return chr(x) + chr(y)
+
+
 def warning(x):
     log_runtime.warning(x)
 
@@ -646,8 +700,9 @@ class RawPcapWriter:
     
 
     def write(self, pkt):
-        """accepts a either a single packet or a list of packets
-        to be written to the dumpfile
+        """accepts either a single packet or a list of packets to be
+        written to the dumpfile
+
         """
         if not self.header_present:
             self._write_header(pkt)
@@ -700,7 +755,7 @@ class PcapWriter(RawPcapWriter):
                 self.linktype = 1
         RawPcapWriter._write_header(self, pkt)
 
-    def _write_packet(self, packet):        
+    def _write_packet(self, packet):
         sec = int(packet.time)
         usec = int(round((packet.time-sec)*1000000))
         s = str(packet)

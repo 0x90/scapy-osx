@@ -16,7 +16,7 @@ EZIP_HEADER="""#! /bin/sh
 PYTHONPATH=$0/%s exec python -m scapy.__init__
 """
 
-def make_ezipfile(base_name, base_dir, verbose=0, dry_run=0):
+def make_ezipfile(base_name, base_dir, verbose=0, dry_run=0, **kwargs):
     fname = archive_util.make_zipfile(base_name, base_dir, verbose, dry_run)
     ofname = fname+".old"
     os.rename(fname,ofname)
@@ -46,7 +46,7 @@ if os.name == "nt":
 
 setup(
     name = 'scapy',
-    version = '2.2.0-dev',
+    version = '2.3.1-dev',
     packages=['scapy','scapy/arch', 'scapy/arch/windows', 'scapy/layers','scapy/asn1','scapy/tools','scapy/modules', 'scapy/crypto', 'scapy/contrib'],
     scripts = SCRIPTS,
     data_files = [('share/man/man1', ["doc/scapy.1.gz"])],
