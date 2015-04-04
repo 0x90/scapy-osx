@@ -63,7 +63,14 @@ if conf.use_pcap:
             class _PcapWrapper_libpcap:
                 def __init__(self, *args, **kargs):
                     self.pcap = pcap.pcapObject()
-                    self.pcap.open_live(*args, **kargs)
+                    if sys.platform == 'darwin' and 'pcap_set_rfmon' not in dir(self.pcap):
+                        warning("Mac OS WiFI monitor mode not supported unless python-libpcap patched for OS X is used.")
+ 
+                    if sys.platform == 'darwin':
+                        self.pcap.pcap_set_rfmon(args[0], 1)
+                        self.pcap.pcap_activate()
+                    else:
+                        self.pcap.open_live(*args, **kargs)
                 def setfilter(self, filter):
                     self.pcap.setfilter(filter, 0, 0)
                 def next(self):
@@ -81,6 +88,8 @@ if conf.use_pcap:
         elif hasattr(pcap,"open_live"): # python-pcapy
             class _PcapWrapper_pcapy:
                 def __init__(self, *args, **kargs):
+                    if sys.platform == 'darwin':
+                        warning("Mac OS WiFI monitor mode not supported unless patched python-libpcap is used.")
                     self.pcap = pcap.open_live(*args, **kargs)
                 def next(self):
                     try:
