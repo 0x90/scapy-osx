@@ -34,7 +34,8 @@ def read_routes():
     elif scapy.arch.FREEBSD:
         f=os.popen("netstat -rnW") # -W to handle long interface names
     else:
-        f=os.popen("netstat -rn") # -f inet
+        # f=os.popen("netstat -rn") # -f inet
+        fs=os.popen("netstat -rn | grep -v vboxnet") # -f inet
     ok = 0
     mtu_present = False
     prio_present = False
